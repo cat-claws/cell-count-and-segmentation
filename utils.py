@@ -1,3 +1,5 @@
+import torch
+
 def labelRatios(iterator, index, n_classes = 8):
 	ratio = torch.ones(n_classes) # normally, it should start from zero, though we start with one to avoid 'divide by zero'
 	for batch in training_generator:
