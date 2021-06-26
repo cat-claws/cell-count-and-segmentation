@@ -26,7 +26,7 @@ class ConsepSimpleTransformDataset(torch.utils.data.Dataset):
 	def __init__(self, train = False, test = False, valid = False, sideLength = 256, num = 200):
 		self.directory = 'CoNSeP/Train' if train else 'CoNSeP/Test'
 		self.setname = 'train' if train else 'test'
-		assert train != test and train != valid
+# 		assert train != test and train != valid
 		self.sideLength = sideLength
 		self.num = num
 		self.valid = valid
