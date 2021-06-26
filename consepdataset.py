@@ -5,6 +5,8 @@ import scipy.io
 import numpy as np
 import torch.nn as nn
 
+from PIL import Image
+
 def simpleTransform(*target, sideLength):
 	H, W = np.array(target[0].shape[:2]) - sideLength
 	assert H * W * (H + W) > 0
