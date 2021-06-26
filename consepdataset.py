@@ -10,7 +10,7 @@ from PIL import Image
 def simpleTransform(*target, sideLength, valid = False):
 	H, W = np.array(target[0].shape[:2])
 	x = np.random.randint(H * 0.7, H - sideLength) if valid else np.random.randint(H * 0.7 - sideLength)
-	y = np.random.randint(W)
+	y = np.random.randint(W - sideLength)
 	assert H * W * (H + W) > 0
 
 	target = [t[x:x+sideLength, y:y+sideLength] for t in target]
