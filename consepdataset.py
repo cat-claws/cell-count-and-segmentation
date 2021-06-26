@@ -32,7 +32,7 @@ class ConsepSimpleTransformDataset(torch.utils.data.Dataset):
 		self.valid = valid
 
 	def __len__(self):
-		return self.num if not test else len(os.listdir(os.path.join(self.directory, 'Images')))
+		return self.num #if not test else len(os.listdir(os.path.join(self.directory, 'Images')))
 
 	def __getitem__(self, index):
 		# Load data and get label
