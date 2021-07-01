@@ -8,9 +8,9 @@ def labelRatios(iterator, index, n_classes = 8):
 	return ratio
 
 def contour(inst_map):
-	borderExcluded = torch.nn.ZeroPad2d(1)(torch.ones((inst_map.shape[0] - 2, inst_map.shape[1] - 2))).bool()
+	borderExcluded = torch.nn.ZeroPad2d(1)(torch.ones((inst_map.shape[-2] - 2, inst_map.shape[-1] - 2))).bool()
 	c = torch.zeros_like(inst_map)
 	for i in (-1, 1):
 		for j in (-1, 1):
-			c.masked_fill_(~torch.eq(inst_map, torch.roll(inst_map, shifts=(i, j), dims=(0, 1))), 1)
+			c.masked_fill_(~torch.eq(inst_map, torch.roll(inst_map, shifts=(i, j), dims=(-2, -1))), 1)
 	return torch.logical_and(c.bool(), borderExcluded)
