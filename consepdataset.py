@@ -44,13 +44,14 @@ def simpleTransform(*target, sideLength, valid = False):
 	return tuple([t.copy() for t in target])
 
 class ConsepSimpleTransformDataset(torch.utils.data.Dataset):
-	def __init__(self, train = False, test = False, valid = False, sideLength = 256, num = 200):
+	def __init__(self, train = False, test = False, valid = False, sideLength = 256, num = 200, combine_classes = True):
 		self.directory = 'CoNSeP/Train' if train else 'CoNSeP/Test'
 		self.setname = 'train' if train else 'test'
 # 		assert train != test and train != valid
 		self.sideLength = sideLength
 		self.num = num
 		self.valid = valid
+		self.combine_classes = combine_classes
 
 	def __len__(self):
 		return self.num #if not test else len(os.listdir(os.path.join(self.directory, 'Images')))
@@ -66,6 +67,9 @@ class ConsepSimpleTransformDataset(torch.utils.data.Dataset):
 		label_inst = torch.from_numpy(label_inst).long()
 		label_type = torch.from_numpy(label_type).long()
 		image = torch.from_numpy(np.transpose(image, (2, 0, 1))) / 255
+		if self.combine_classes:
+			label_type.masked_fill_(label_type == 4, 3)
+			label_type.masked_fill_(label_type > 4, 4)
 		
 		hori_map = torch.from_numpy(np.transpose(hori_map / 255.0, (2, 0, 1)))
 		vert_map = torch.from_numpy(np.transpose(vert_map / 255.0, (2, 0, 1)))
@@ -73,10 +77,11 @@ class ConsepSimpleTransformDataset(torch.utils.data.Dataset):
 		return image, label_inst, label_type, hori_map, vert_map
 
 class ConsepSimpleDataset(torch.utils.data.Dataset):
-	def __init__(self, train = False, test = False):
+	def __init__(self, train = False, test = False, combine_classes = True):
 		self.directory = 'CoNSeP/Train' if train else 'CoNSeP/Test'
 		self.setname = 'train' if train else 'test'
 		assert train != test
+		self.combine_classes = combine_classes
 
 	def __len__(self):
 		return len(os.listdir(os.path.join(self.directory, 'Images')))
@@ -89,6 +94,9 @@ class ConsepSimpleDataset(torch.utils.data.Dataset):
 		image = torch.from_numpy(np.transpose(image, (2, 0, 1))) / 255.0
 		label_inst = torch.from_numpy(labels['inst_map']).long()
 		label_type = torch.from_numpy(labels['type_map']).long()
+		if self.combine_classes:
+			label_type.masked_fill_(label_type == 4, 3)
+			label_type.masked_fill_(label_type > 4, 4)
 		
 		hori_map = torch.from_numpy(np.transpose(labels['hori_map'] / 255.0, (2, 0, 1)))
 		vert_map = torch.from_numpy(np.transpose(labels['vert_map'] / 255.0, (2, 0, 1)))
@@ -97,10 +105,11 @@ class ConsepSimpleDataset(torch.utils.data.Dataset):
 	
 
 class ConsepSimplePadDataset(torch.utils.data.Dataset):
-	def __init__(self, train = False, test = False):
+	def __init__(self, train = False, test = False, combine_classes = True):
 		self.directory = 'CoNSeP/Train' if train else 'CoNSeP/Test'
 		self.setname = 'train' if train else 'test'
 		assert train != test
+		self.combine_classes = combine_classes
 
 	def __len__(self):
 		return len(os.listdir(os.path.join(self.directory, 'Images')))
@@ -113,6 +122,9 @@ class ConsepSimplePadDataset(torch.utils.data.Dataset):
 		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1)))
 		label_inst = torch.from_numpy(labels['inst_map']).long()
 		label_type = torch.from_numpy(labels['type_map']).long()
+		if self.combine_classes:
+			label_type.masked_fill_(label_type == 4, 3)
+			label_type.masked_fill_(label_type > 4, 4)
 		
 		hori_map = torch.from_numpy(np.transpose(labels['hori_map'] / 255.0, (2, 0, 1)))
 		vert_map = torch.from_numpy(np.transpose(labels['vert_map'] / 255.0, (2, 0, 1)))
