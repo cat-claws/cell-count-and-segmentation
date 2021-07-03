@@ -81,7 +81,7 @@ def fix_mirror_padding(ann):
 		current_max_id = np.amax(ann)
 	return ann
 
-	def gen_instance_hv_map(ann, crop_shape):
+def gen_instance_hv_map(ann, crop_shape):
 	"""Input annotation must be of original shape.
 
 	The map is calculated only for instances within the crop portion
