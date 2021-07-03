@@ -9,6 +9,25 @@ from PIL import Image
 
 from util_hv_map import get_hv_map
 
+def extendLabels(force = False):
+	""" get horizontal/vertical maps before loading"""
+	
+	directories = ['CoNSeP/Train', 'CoNSeP/Test']
+	setnames = ['train', 'test']
+	for i in range(len(directories)):
+		for index in range(len(os.listdir(os.path.join(directories[i], 'Labels')))):
+			labels = scipy.io.loadmat(os.path.join(directories[i], 'Labels', setnames[i] + f'_{index + 1}.mat'))
+			image = np.array(Image.open(os.path.join(directories[i], 'Images', setnames[i] + f'_{index + 1}.png')))[:,:,:3]
+
+			if ('hori_map' not in labels or 'vert_map' not in labels) or force:
+				hori_map, vert_map = get_hv_map(labels['inst_map'].astype(int), image)
+
+				labels['hori_map'] = hori_map
+				labels['vert_map'] = vert_map
+				scipy.io.savemat(os.path.join(directories[i], 'Labels', setnames[i] + f'_{index + 1}.mat'), labels)
+
+extendLabels()			
+
 def simpleTransform(*target, sideLength, valid = False):
 	H, W = np.array(target[0].shape[:2])
 	x = np.random.randint(H * 0.7, H - sideLength) if valid else np.random.randint(H * 0.7 - sideLength)
@@ -41,18 +60,17 @@ class ConsepSimpleTransformDataset(torch.utils.data.Dataset):
 		index = index % len(os.listdir(os.path.join(self.directory, 'Images')))
 		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
 		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
-		horizontal_map, vertical_map = get_hv_map(labels['inst_map'].astype(int), image)
 		
-		image, label_inst, label_type, horizontal_map, vertical_map = simpleTransform(image, labels['inst_map'], labels['type_map'], horizontal_map, vertical_map, sideLength = self.sideLength, valid = self.valid)
+		image, label_inst, label_type, hori_map, vert_map = simpleTransform(image, labels['inst_map'], labels['type_map'], labels['hori_map'], labels['vert_map'], sideLength = self.sideLength, valid = self.valid)
 
 		label_inst = torch.from_numpy(label_inst).long()
 		label_type = torch.from_numpy(label_type).long()
 		image = torch.from_numpy(np.transpose(image, (2, 0, 1))) / 255
 		
-		horizontal_map = torch.from_numpy(np.transpose(horizontal_map / 255.0, (2, 0, 1)))
-		vertical_map = torch.from_numpy(np.transpose(vertical_map / 255.0, (2, 0, 1)))
+		hori_map = torch.from_numpy(np.transpose(hori_map / 255.0, (2, 0, 1)))
+		vert_map = torch.from_numpy(np.transpose(vert_map / 255.0, (2, 0, 1)))
 
-		return image, label_inst, label_type, horizontal_map, vertical_map
+		return image, label_inst, label_type, hori_map, vert_map
 
 class ConsepSimpleDataset(torch.utils.data.Dataset):
 	def __init__(self, train = False, test = False):
@@ -67,17 +85,15 @@ class ConsepSimpleDataset(torch.utils.data.Dataset):
 		# Load data and get label
 		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
 		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
-		
-		horizontal_map, vertical_map = get_hv_map(labels['inst_map'].astype(int), image)
-		
+			
 		image = torch.from_numpy(np.transpose(image, (2, 0, 1))) / 255.0
 		label_inst = torch.from_numpy(labels['inst_map']).long()
 		label_type = torch.from_numpy(labels['type_map']).long()
 		
-		horizontal_map = torch.from_numpy(np.transpose(horizontal_map / 255.0, (2, 0, 1)))
-		vertical_map = torch.from_numpy(np.transpose(vertical_map / 255.0, (2, 0, 1)))
+		hori_map = torch.from_numpy(np.transpose(labels['hori_map'] / 255.0, (2, 0, 1)))
+		vert_map = torch.from_numpy(np.transpose(labels['vert_map'] / 255.0, (2, 0, 1)))
 
-		return image, label_inst, label_type, horizontal_map, vertical_map
+		return image, label_inst, label_type, hori_map, vert_map
 	
 
 class ConsepSimplePadDataset(torch.utils.data.Dataset):
@@ -93,16 +109,14 @@ class ConsepSimplePadDataset(torch.utils.data.Dataset):
 		# Load data and get label
 		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
 		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
-		
-		horizontal_map, vertical_map = get_hv_map(labels['inst_map'].astype(int), image)
-		
+			
 		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1)))
 		label_inst = torch.from_numpy(labels['inst_map']).long()
 		label_type = torch.from_numpy(labels['type_map']).long()
 		
-		horizontal_map = torch.from_numpy(np.transpose(horizontal_map / 255.0, (2, 0, 1)))
-		vertical_map = torch.from_numpy(np.transpose(vertical_map / 255.0, (2, 0, 1)))
+		hori_map = torch.from_numpy(np.transpose(labels['hori_map'] / 255.0, (2, 0, 1)))
+		vert_map = torch.from_numpy(np.transpose(labels['vert_map'] / 255.0, (2, 0, 1)))
 
 		m = nn.ZeroPad2d(12)
 
-		return m(image), m(label_inst), m(label_type), m(horizontal_map - 0.5) + 0.5, m(vertical_map - 0.5) + 0.5
+		return m(image), m(label_inst), m(label_type), m(hori_map - 0.5) + 0.5, m(vert_map - 0.5) + 0.5
