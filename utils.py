@@ -14,3 +14,35 @@ def contour(inst_map):
 		for j in (-1, 1):
 			c.masked_fill_(~torch.eq(inst_map, torch.roll(inst_map, shifts=(i, j), dims=(-2, -1))), 1)
 	return torch.logical_and(c.bool(), borderExcluded)
+
+import re
+from matplotlib import pyplot as plt
+
+
+def viewing(directory):
+	with open(directory, 'r') as f:
+		text = f.read()
+
+	loss = {}
+	lossRegex = re.compile(r'Train Loss: (\d\.\d\d\d)')
+	loss['train'] = [float(x) for x in lossRegex.findall(text)]
+	lossRegex = re.compile(r'Val\. Loss: (\d\.\d\d\d)')
+	loss['valid'] = [float(x) for x in lossRegex.findall(text)]
+	print(loss)
+
+	acc = {}
+	accRegex = re.compile(r'Train Acc: (\d\d\.\d\d)')
+	acc['train'] = [float(x) for x in accRegex.findall(text)]
+	accRegex = re.compile(r'Val\. Acc: (\d\d\.\d\d)')
+	acc['valid'] = [float(x) for x in accRegex.findall(text)]
+	print(acc)
+
+	plt.plot(loss['train'])
+	plt.plot(loss['valid'])
+	plt.show()
+
+	plt.plot(acc['train'])
+	plt.plot(acc['valid'])
+	plt.show()
+
+	return loss, acc
