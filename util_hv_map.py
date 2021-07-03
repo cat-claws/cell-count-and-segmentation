@@ -176,7 +176,7 @@ def gen_targets(ann, crop_shape, **kwargs):
 
 	return target_dict
 
-	def prep_sample(data, is_batch=False, **kwargs):
+def prep_sample(data, is_batch=False, **kwargs):
 	"""
 	Designed to process direct output from loader
 	"""
