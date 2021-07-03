@@ -66,7 +66,7 @@ class ConsepSimpleTransformDataset(torch.utils.data.Dataset):
 
 		label_inst = torch.from_numpy(label_inst).long()
 		label_type = torch.from_numpy(label_type).long()
-		image = torch.from_numpy(np.transpose(image, (2, 0, 1))) / 255
+		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
 		if self.combine_classes:
 			label_type.masked_fill_(label_type == 4, 3)
 			label_type.masked_fill_(label_type > 4, 4)
@@ -91,7 +91,7 @@ class ConsepSimpleDataset(torch.utils.data.Dataset):
 		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
 		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
 			
-		image = torch.from_numpy(np.transpose(image, (2, 0, 1))) / 255.0
+		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
 		label_inst = torch.from_numpy(labels['inst_map']).long()
 		label_type = torch.from_numpy(labels['type_map']).long()
 		if self.combine_classes:
@@ -119,7 +119,7 @@ class ConsepSimplePadDataset(torch.utils.data.Dataset):
 		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
 		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
 			
-		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1)))
+		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
 		label_inst = torch.from_numpy(labels['inst_map']).long()
 		label_type = torch.from_numpy(labels['type_map']).long()
 		if self.combine_classes:
