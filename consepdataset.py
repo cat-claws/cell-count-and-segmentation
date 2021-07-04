@@ -20,10 +20,10 @@ def extendLabels(force = False):
 			image = np.array(Image.open(os.path.join(directories[i], 'Images', setnames[i] + f'_{index + 1}.png')))[:,:,:3]
 
 			if ('hori_map' not in labels or 'vert_map' not in labels) or force:
-				hori_map, vert_map = get_hv_map(labels['inst_map'].astype(int), image)
+				map_dict = gen_targets(labels['inst_map'].astype(int), [1000, 1000])
 
-				labels['hori_map'] = hori_map
-				labels['vert_map'] = vert_map
+				labels['hori_map'] = map_dict['h_map']
+				labels['vert_map'] = map_dict['v_map']
 				scipy.io.savemat(os.path.join(directories[i], 'Labels', setnames[i] + f'_{index + 1}.mat'), labels)
 
 extendLabels()			
