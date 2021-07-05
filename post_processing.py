@@ -30,17 +30,16 @@ def __proc_np_hv(pred):
               channel 2 containing the regressed Y-map
     """
 
-    pred_binary = (torch.sigmoid(pred[0] >= 0.5)).squeeze(0).cpu().numpy()
+    pred_binary = (torch.sigmoid(pred[0])>=0.5).float().squeeze(0).cpu().numpy()
     pred_hmap = torch.sigmoid(pred[1]).squeeze(0).cpu().numpy()
     pred_vmap = torch.sigmoid(pred[2]).squeeze(0).cpu().numpy()
 
-    blb_raw = pred_binary.astype(np.float32)
     h_dir_raw = pred_hmap.astype(np.float32)
     v_dir_raw = pred_vmap.astype(np.float32)
 
 
     # processing
-    blb = np.array(blb_raw, dtype=np.int32)
+    blb = np.array(pred_binary, dtype=np.int32)
 
     blb = measurements.label(blb)[0]
     blb = morph.remove_small_objects(blb, min_size=10)
