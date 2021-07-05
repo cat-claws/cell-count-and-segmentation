@@ -222,6 +222,8 @@ def get_hv_map(instance, input_image):
 	# input_image: the input image (1000, 1000, 3)
 
 	target_dict = gen_targets(instance,[1000,1000])
+	target_dict.pop('h_map')
+	target_dict.pop('v_map')
 	target_dict['img'] = input_image.reshape((1000,1000,3))
 	hv_matrix = prep_sample(target_dict)
 	horizontal = hv_matrix[:,2000:3000,:]
