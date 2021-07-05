@@ -7,7 +7,7 @@ import torch.nn as nn
 
 from PIL import Image
 
-from util_hv_map import get_hv_map
+from util_hv_map import get_hv_map, gen_targets
 
 def extendLabels(force = False):
 	""" get horizontal/vertical maps before loading"""
