@@ -21,7 +21,6 @@ def extendLabels(force = False):
 
 			if ('hori_map' not in labels or 'vert_map' not in labels) or force:
 				map_dict = gen_targets(labels['inst_map'].astype(int), [1000, 1000])
-				print(map_dict)
 				labels['hori_map'] = map_dict['h_map']
 				labels['vert_map'] = map_dict['v_map']
 				scipy.io.savemat(os.path.join(directories[i], 'Labels', setnames[i] + f'_{index + 1}.mat'), labels)
