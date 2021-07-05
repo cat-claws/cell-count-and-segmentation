@@ -177,7 +177,7 @@ def gen_targets(ann, crop_shape, **kwargs):
 		"v_map": v_map,
 		"np_map": np_map,
 	}
-	print(target_dict.keys())
+
 	return target_dict
 
 def prep_sample(data, is_batch=False, **kwargs):
