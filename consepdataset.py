@@ -70,8 +70,8 @@ class ConsepSimpleTransformDataset(torch.utils.data.Dataset):
 			label_type.masked_fill_(label_type == 4, 3)
 			label_type.masked_fill_(label_type > 4, 4)
 		
-		hori_map = torch.from_numpy(np.transpose(hori_map / 255.0, (2, 0, 1))).float()
-		vert_map = torch.from_numpy(np.transpose(vert_map / 255.0, (2, 0, 1))).float()
+		hori_map = torch.from_numpy(hori_map).float()
+		vert_map = torch.from_numpy(vert_map).float()
 
 		return image, label_inst, label_type, hori_map, vert_map
 
