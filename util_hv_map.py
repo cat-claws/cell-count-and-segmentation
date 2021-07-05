@@ -166,6 +166,8 @@ def gen_targets(ann, crop_shape, **kwargs):
 	np_map = ann.copy()
 	np_map[np_map > 0] = 1
 
+	h_map = cropping_center(h_map, crop_shape)
+	v_map = cropping_center(v_map, crop_shape)
 	hv_map = cropping_center(hv_map, crop_shape)
 	np_map = cropping_center(np_map, crop_shape)
 
