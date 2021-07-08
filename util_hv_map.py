@@ -158,11 +158,11 @@ def gen_instance_hv_map(ann, crop_shape):
 		y_map_box[inst_map > 0] = inst_y[inst_map > 0]
 
 	hv_map = np.dstack([x_map, y_map])
-	return hv_map
+	return x_map, y_map, hv_map
 
 def gen_targets(ann, crop_shape, **kwargs):
 	"""Generate the targets for the network."""
-	hv_map = gen_instance_hv_map(ann, crop_shape)
+	h_map, v_map, hv_map = gen_instance_hv_map(ann, crop_shape)
 	np_map = ann.copy()
 	np_map[np_map > 0] = 1
 
@@ -171,6 +171,8 @@ def gen_targets(ann, crop_shape, **kwargs):
 
 	target_dict = {
 		"hv_map": hv_map,
+		"h_map": h_map,
+		"v_map": v_map,
 		"np_map": np_map,
 	}
 
