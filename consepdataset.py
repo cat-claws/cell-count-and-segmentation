@@ -7,7 +7,7 @@ import torch.nn as nn
 
 from PIL import Image
 
-from util_hv_map import get_hv_map
+from util_hv_map import get_hv_map, gen_targets
 
 def extendLabels(force = False):
 	""" get horizontal/vertical maps before loading"""
@@ -21,7 +21,6 @@ def extendLabels(force = False):
 
 			if ('hori_map' not in labels or 'vert_map' not in labels) or force:
 				map_dict = gen_targets(labels['inst_map'].astype(int), [1000, 1000])
-
 				labels['hori_map'] = map_dict['h_map']
 				labels['vert_map'] = map_dict['v_map']
 				scipy.io.savemat(os.path.join(directories[i], 'Labels', setnames[i] + f'_{index + 1}.mat'), labels)
@@ -71,8 +70,8 @@ class ConsepSimpleTransformDataset(torch.utils.data.Dataset):
 			label_type.masked_fill_(label_type == 4, 3)
 			label_type.masked_fill_(label_type > 4, 4)
 		
-		hori_map = torch.from_numpy(np.transpose(hori_map / 255.0, (2, 0, 1))).float()
-		vert_map = torch.from_numpy(np.transpose(vert_map / 255.0, (2, 0, 1))).float()
+		hori_map = torch.from_numpy(hori_map).unsqueeze(0).float()
+		vert_map = torch.from_numpy(vert_map).unsqueeze(0).float()
 
 		return image, label_inst, label_type, hori_map, vert_map
 

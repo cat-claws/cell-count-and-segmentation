@@ -166,6 +166,8 @@ def gen_targets(ann, crop_shape, **kwargs):
 	np_map = ann.copy()
 	np_map[np_map > 0] = 1
 
+	h_map = cropping_center(h_map, crop_shape)
+	v_map = cropping_center(v_map, crop_shape)
 	hv_map = cropping_center(hv_map, crop_shape)
 	np_map = cropping_center(np_map, crop_shape)
 
@@ -220,6 +222,8 @@ def get_hv_map(instance, input_image):
 	# input_image: the input image (1000, 1000, 3)
 
 	target_dict = gen_targets(instance,[1000,1000])
+	target_dict.pop('h_map')
+	target_dict.pop('v_map')
 	target_dict['img'] = input_image.reshape((1000,1000,3))
 	hv_matrix = prep_sample(target_dict)
 	horizontal = hv_matrix[:,2000:3000,:]
