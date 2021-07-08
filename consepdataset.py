@@ -7,7 +7,7 @@ import torch.nn as nn
 
 from PIL import Image
 
-from util_hv_map import get_hv_map, gen_targets
+from util_hv_map import gen_targets
 
 def extendLabels(force = False):
 	""" get horizontal/vertical maps before loading"""
@@ -97,8 +97,8 @@ class ConsepSimpleDataset(torch.utils.data.Dataset):
 			label_type.masked_fill_(label_type == 4, 3)
 			label_type.masked_fill_(label_type > 4, 4)
 		
-		hori_map = torch.from_numpy(hori_map).unsqueeze(0).float()
-		vert_map = torch.from_numpy(vert_map).unsqueeze(0).float()
+		hori_map = torch.from_numpy(labels['hori_map']).unsqueeze(0).float()
+		vert_map = torch.from_numpy(labels['vert_map']).unsqueeze(0).float()
 
 		return {'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hori_map':hori_map, 'vert_map':vert_map}
 	
@@ -125,8 +125,8 @@ class ConsepSimplePadDataset(torch.utils.data.Dataset):
 			label_type.masked_fill_(label_type == 4, 3)
 			label_type.masked_fill_(label_type > 4, 4)
 		
-		hori_map = torch.from_numpy(hori_map).unsqueeze(0).float()
-		vert_map = torch.from_numpy(vert_map).unsqueeze(0).float()
+		hori_map = torch.from_numpy(labels['hori_map']).unsqueeze(0).float()
+		vert_map = torch.from_numpy(labels['vert_map']).unsqueeze(0).float()
 
 		m = nn.ZeroPad2d(12)
 
