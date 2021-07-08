@@ -73,7 +73,7 @@ class ConsepSimpleTransformDataset(torch.utils.data.Dataset):
 		hori_map = torch.from_numpy(hori_map).unsqueeze(0).float()
 		vert_map = torch.from_numpy(vert_map).unsqueeze(0).float()
 
-		return image, label_inst, label_type, hori_map, vert_map
+		return {'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hori_map':hori_map, 'vert_map':vert_map}
 
 class ConsepSimpleDataset(torch.utils.data.Dataset):
 	def __init__(self, train = False, test = False, combine_classes = True):
@@ -100,7 +100,7 @@ class ConsepSimpleDataset(torch.utils.data.Dataset):
 		hori_map = torch.from_numpy(hori_map).unsqueeze(0).float()
 		vert_map = torch.from_numpy(vert_map).unsqueeze(0).float()
 
-		return image, label_inst, label_type, hori_map, vert_map
+		return {'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hori_map':hori_map, 'vert_map':vert_map}
 	
 
 class ConsepSimplePadDataset(torch.utils.data.Dataset):
@@ -130,4 +130,4 @@ class ConsepSimplePadDataset(torch.utils.data.Dataset):
 
 		m = nn.ZeroPad2d(12)
 
-		return m(image), m(label_inst), m(label_type), m(hori_map), m(vert_map)
+		return {'image':m(image), 'inst_map':m(label_inst), 'type_map':m(label_type), 'hori_map':m(hori_map), 'vert_map':m(vert_map)}
