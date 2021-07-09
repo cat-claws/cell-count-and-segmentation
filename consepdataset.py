@@ -73,7 +73,11 @@ class ConsepSimpleTransformDataset(torch.utils.data.Dataset):
 		hori_map = torch.from_numpy(hori_map).unsqueeze(0).float()
 		vert_map = torch.from_numpy(vert_map).unsqueeze(0).float()
 
-		return {'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hori_map':hori_map, 'vert_map':vert_map}
+		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hori_map':hori_map, 'vert_map':vert_map})
+	
+	def transfer(self, data):
+		device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+		return {key:value.to(device) for key, value in data.items()}
 
 class ConsepSimpleDataset(torch.utils.data.Dataset):
 	def __init__(self, train = False, test = False, combine_classes = True):
@@ -100,7 +104,11 @@ class ConsepSimpleDataset(torch.utils.data.Dataset):
 		hori_map = torch.from_numpy(labels['hori_map']).unsqueeze(0).float()
 		vert_map = torch.from_numpy(labels['vert_map']).unsqueeze(0).float()
 
-		return {'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hori_map':hori_map, 'vert_map':vert_map}
+		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hori_map':hori_map, 'vert_map':vert_map})
+	
+	def transfer(self, data):
+		device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+		return {key:value.to(device) for key, value in data.items()}
 	
 
 class ConsepSimplePadDataset(torch.utils.data.Dataset):
@@ -130,4 +138,8 @@ class ConsepSimplePadDataset(torch.utils.data.Dataset):
 
 		m = nn.ZeroPad2d(12)
 
-		return {'image':m(image), 'inst_map':m(label_inst), 'type_map':m(label_type), 'hori_map':m(hori_map), 'vert_map':m(vert_map)}
+		return self.transfer({'image':m(image), 'inst_map':m(label_inst), 'type_map':m(label_type), 'hori_map':m(hori_map), 'vert_map':m(vert_map)})
+	
+	def transfer(self, data):
+		device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+		return {key:value.to(device) for key, value in data.items()}
