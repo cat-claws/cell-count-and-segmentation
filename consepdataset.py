@@ -60,8 +60,11 @@ class ConsepSimpleDataset(torch.utils.data.Dataset):
 
 		hori_map = torch.from_numpy(labels['hori_map']).unsqueeze(0).float()
 		vert_map = torch.from_numpy(labels['vert_map']).unsqueeze(0).float()
+		hv_map = torch.cat((hori_map, vert_map), dim = 1)
+		
+		edge_map = torch.from_numpy(labels['edge_map']).long()
 
-		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hori_map':hori_map, 'vert_map':vert_map})
+		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hv_map':hv_map, 'edge_map':edge_map})
 
 	def transfer(self, data):
 		device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -86,10 +89,13 @@ class ConsepSimplePadDataset(ConsepSimpleDataset):
 		
 		hori_map = torch.from_numpy(labels['hori_map']).unsqueeze(0).float()
 		vert_map = torch.from_numpy(labels['vert_map']).unsqueeze(0).float()
+		hv_map = torch.cat((hori_map, vert_map), dim = 1)
+		
+		edge_map = torch.from_numpy(labels['edge_map']).long()
 
 		m = nn.ZeroPad2d(12)
 
-		return self.transfer({'image':m(image), 'inst_map':m(label_inst), 'type_map':m(label_type), 'hori_map':m(hori_map), 'vert_map':m(vert_map)})
+		return self.transfer({'image':m(image), 'inst_map':m(label_inst), 'type_map':m(label_type), 'hv_map':m(hv_map), 'edge_map':m(edge_map)})
 
 	
 def simpleTransform(*target, sideLength, valid = False):
@@ -124,7 +130,7 @@ class ConsepSimpleTransformDataset(ConsepSimpleDataset):
 		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
 		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
 		
-		image, label_inst, label_type, hori_map, vert_map = simpleTransform(image, labels['inst_map'], labels['type_map'], labels['hori_map'], labels['vert_map'], sideLength = self.sideLength, valid = self.valid)
+		image, label_inst, label_type, hori_map, vert_map, edge_map = simpleTransform(image, labels['inst_map'], labels['type_map'], labels['hori_map'], labels['vert_map'], labels['edge_map'], sideLength = self.sideLength, valid = self.valid)
 
 		label_inst = torch.from_numpy(label_inst).long()
 		label_type = torch.from_numpy(label_type).long()
@@ -135,6 +141,9 @@ class ConsepSimpleTransformDataset(ConsepSimpleDataset):
 		
 		hori_map = torch.from_numpy(hori_map).unsqueeze(0).float()
 		vert_map = torch.from_numpy(vert_map).unsqueeze(0).float()
+		hv_map = torch.cat((hori_map, vert_map), dim = 1)
+		
+		edge_map = torch.from_numpy(edge_map).long()
 
-		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hori_map':hori_map, 'vert_map':vert_map})
+		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hv_map':hv_map, 'edge_map':edge_map})
 	
