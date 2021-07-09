@@ -25,8 +25,64 @@ def extendLabels(force = False):
 				labels['vert_map'] = map_dict['v_map']
 				scipy.io.savemat(os.path.join(directories[i], 'Labels', setnames[i] + f'_{index + 1}.mat'), labels)
 
-extendLabels()			
+extendLabels()
 
+class ConsepSimpleDataset(torch.utils.data.Dataset):
+	def __init__(self, train = False, test = False, combine_classes = True):
+		self.directory = 'CoNSeP/Train' if train else 'CoNSeP/Test'
+		self.setname = 'train' if train else 'test'
+		assert train + test < 2
+		self.combine_classes = combine_classes
+
+	def __len__(self):
+		return len(os.listdir(os.path.join(self.directory, 'Images')))
+
+	def __getitem__(self, index):
+		# Load data and get label
+		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
+		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
+
+		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
+		label_inst = torch.from_numpy(labels['inst_map']).long()
+		label_type = torch.from_numpy(labels['type_map']).long()
+		if self.combine_classes:
+			label_type.masked_fill_(label_type == 4, 3)
+			label_type.masked_fill_(label_type > 4, 4)
+
+		hori_map = torch.from_numpy(labels['hori_map']).unsqueeze(0).float()
+		vert_map = torch.from_numpy(labels['vert_map']).unsqueeze(0).float()
+
+		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hori_map':hori_map, 'vert_map':vert_map})
+
+	def transfer(self, data):
+		device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+		return {key:value.to(device) for key, value in data.items()}
+	
+
+class ConsepSimplePadDataset(ConsepSimpleDataset):
+	def __init__(self, train = False, test = False, combine_classes = True):
+		super().__init__(train, test, combine_classes)
+
+	def __getitem__(self, index):
+		# Load data and get label
+		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
+		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
+			
+		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
+		label_inst = torch.from_numpy(labels['inst_map']).long()
+		label_type = torch.from_numpy(labels['type_map']).long()
+		if self.combine_classes:
+			label_type.masked_fill_(label_type == 4, 3)
+			label_type.masked_fill_(label_type > 4, 4)
+		
+		hori_map = torch.from_numpy(labels['hori_map']).unsqueeze(0).float()
+		vert_map = torch.from_numpy(labels['vert_map']).unsqueeze(0).float()
+
+		m = nn.ZeroPad2d(12)
+
+		return self.transfer({'image':m(image), 'inst_map':m(label_inst), 'type_map':m(label_type), 'hori_map':m(hori_map), 'vert_map':m(vert_map)})
+
+	
 def simpleTransform(*target, sideLength, valid = False):
 	H, W = np.array(target[0].shape[:2])
 	x = np.random.randint(H * 0.7, H - sideLength) if valid else np.random.randint(H * 0.7 - sideLength)
@@ -42,15 +98,13 @@ def simpleTransform(*target, sideLength, valid = False):
 
 	return tuple([t.copy() for t in target])
 
-class ConsepSimpleTransformDataset(torch.utils.data.Dataset):
+class ConsepSimpleTransformDataset(ConsepSimpleDataset):
 	def __init__(self, train = False, test = False, valid = False, sideLength = 256, num = 200, combine_classes = True):
-		self.directory = 'CoNSeP/Train' if train else 'CoNSeP/Test'
-		self.setname = 'train' if train else 'test'
-# 		assert train != test and train != valid
+		super().__init__(train, test, combine_classes)
+		assert train + valid + test < 2
 		self.sideLength = sideLength
 		self.num = num
 		self.valid = valid
-		self.combine_classes = combine_classes
 
 	def __len__(self):
 		return self.num #if not test else len(os.listdir(os.path.join(self.directory, 'Images')))
@@ -75,71 +129,3 @@ class ConsepSimpleTransformDataset(torch.utils.data.Dataset):
 
 		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hori_map':hori_map, 'vert_map':vert_map})
 	
-	def transfer(self, data):
-		device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-		return {key:value.to(device) for key, value in data.items()}
-
-class ConsepSimpleDataset(torch.utils.data.Dataset):
-	def __init__(self, train = False, test = False, combine_classes = True):
-		self.directory = 'CoNSeP/Train' if train else 'CoNSeP/Test'
-		self.setname = 'train' if train else 'test'
-		assert train != test
-		self.combine_classes = combine_classes
-
-	def __len__(self):
-		return len(os.listdir(os.path.join(self.directory, 'Images')))
-
-	def __getitem__(self, index):
-		# Load data and get label
-		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
-		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
-			
-		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
-		label_inst = torch.from_numpy(labels['inst_map']).long()
-		label_type = torch.from_numpy(labels['type_map']).long()
-		if self.combine_classes:
-			label_type.masked_fill_(label_type == 4, 3)
-			label_type.masked_fill_(label_type > 4, 4)
-		
-		hori_map = torch.from_numpy(labels['hori_map']).unsqueeze(0).float()
-		vert_map = torch.from_numpy(labels['vert_map']).unsqueeze(0).float()
-
-		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hori_map':hori_map, 'vert_map':vert_map})
-	
-	def transfer(self, data):
-		device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-		return {key:value.to(device) for key, value in data.items()}
-	
-
-class ConsepSimplePadDataset(torch.utils.data.Dataset):
-	def __init__(self, train = False, test = False, combine_classes = True):
-		self.directory = 'CoNSeP/Train' if train else 'CoNSeP/Test'
-		self.setname = 'train' if train else 'test'
-		assert train != test
-		self.combine_classes = combine_classes
-
-	def __len__(self):
-		return len(os.listdir(os.path.join(self.directory, 'Images')))
-
-	def __getitem__(self, index):
-		# Load data and get label
-		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
-		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
-			
-		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
-		label_inst = torch.from_numpy(labels['inst_map']).long()
-		label_type = torch.from_numpy(labels['type_map']).long()
-		if self.combine_classes:
-			label_type.masked_fill_(label_type == 4, 3)
-			label_type.masked_fill_(label_type > 4, 4)
-		
-		hori_map = torch.from_numpy(labels['hori_map']).unsqueeze(0).float()
-		vert_map = torch.from_numpy(labels['vert_map']).unsqueeze(0).float()
-
-		m = nn.ZeroPad2d(12)
-
-		return self.transfer({'image':m(image), 'inst_map':m(label_inst), 'type_map':m(label_type), 'hori_map':m(hori_map), 'vert_map':m(vert_map)})
-	
-	def transfer(self, data):
-		device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-		return {key:value.to(device) for key, value in data.items()}
