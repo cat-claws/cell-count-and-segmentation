@@ -8,6 +8,7 @@ import torch.nn as nn
 from PIL import Image
 
 from util_hv_map import gen_targets
+from utils import getEdges
 
 def extendLabels(force = False):
 	""" get horizontal/vertical maps before loading"""
@@ -18,11 +19,19 @@ def extendLabels(force = False):
 		for index in range(len(os.listdir(os.path.join(directories[i], 'Labels')))):
 			labels = scipy.io.loadmat(os.path.join(directories[i], 'Labels', setnames[i] + f'_{index + 1}.mat'))
 			image = np.array(Image.open(os.path.join(directories[i], 'Images', setnames[i] + f'_{index + 1}.png')))[:,:,:3]
+			editted = False
+			
+			if 'edge_map' not in labels:
+				labels['edge_map'] = getEdges(torch.tensor(labels['inst_map'])).numpy()
+				editted = True
 
-			if ('hori_map' not in labels or 'vert_map' not in labels) or force:
+			if ('hori_map' not in labels or 'vert_map' not in labels):
 				map_dict = gen_targets(labels['inst_map'].astype(int), [1000, 1000])
 				labels['hori_map'] = map_dict['h_map']
 				labels['vert_map'] = map_dict['v_map']
+				editted = True
+			
+			if editted == True or force:
 				scipy.io.savemat(os.path.join(directories[i], 'Labels', setnames[i] + f'_{index + 1}.mat'), labels)
 
 extendLabels()
