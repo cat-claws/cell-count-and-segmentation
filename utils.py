@@ -1,5 +1,8 @@
 import torch
 
+import numpy as np
+from scipy import ndimage as ndi
+
 def labelRatios(iterator, index, n_classes = 8):
 	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 	ratio = torch.ones(n_classes).to(device) # normally, it should start from zero, though we start with one to avoid 'divide by zero'
@@ -16,7 +19,6 @@ def getEdges(inst_map): # unluckily, we must have this compatible with torch
 			c.masked_fill_(~torch.eq(inst_map, torch.roll(inst_map, shifts=(i, j), dims=(-2, -1))), 1)
 	return torch.logical_and(c.bool(), borderExcluded)
 
-from scipy import ndimage as ndi
 
 def getDistanceMap(inst_map):
 	binaries = torch.nn.functional.one_hot(torch.tensor(inst_map).long()).permute(2, 0, 1).numpy()
