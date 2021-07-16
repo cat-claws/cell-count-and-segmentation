@@ -107,12 +107,12 @@ def simpleTransform(*target, sideLength, valid = False):
 
 	target = [t[x:x+sideLength, y:y+sideLength] for t in target]
 
-	if np.random.random() > 0.5:
-		target = [np.flip(t, 0) for t in target]
-	if np.random.random() > 0.5:
-		target = [np.flip(t, 1) for t in target]
-	if np.random.random() > 0.5:
-		target = [t.swapaxes(0, 1) for t in target]
+# 	if np.random.random() > 0.5:
+# 		target = [np.flip(t, 0) for t in target]
+# 	if np.random.random() > 0.5:
+# 		target = [np.flip(t, 1) for t in target]
+# 	if np.random.random() > 0.5:
+# 		target = [t.swapaxes(0, 1) for t in target]
 
 	return tuple([t.copy() for t in target])
 
