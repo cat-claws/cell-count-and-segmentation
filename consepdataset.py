@@ -194,6 +194,9 @@ def add_to_brightness(image):
 	value = np.random.uniform(0., 0.6)
 	return np.clip(image + value, 0, 255)
 
+def add_noise(image):
+	return np.clip(image + np.random.normal(0, 100, image.shape), 0, 255)
+
 class ConsepAugmentedTransformDataset(ConsepSimpleTransformDataset):
 	def __init__(self, train = False, test = False, valid = False, sideLength = 256, num = 200, combine_classes = True):
 		super().__init__(train, test, valid, sideLength, num, combine_classes)
@@ -208,12 +211,10 @@ class ConsepAugmentedTransformDataset(ConsepSimpleTransformDataset):
 
 		label_inst = torch.from_numpy(label_inst).long()
 		label_type = torch.from_numpy(label_type).long()
-		image = gaussian_blur(image)
-		image = median_blur(image)
-		image = add_to_hue(image)
-		image = add_to_saturation(image)
-		image = add_to_contrast(image)
-		image = add_to_brightness(image)
+		
+		for func in (gaussian_blur, median_blur, add_to_hue, add_to_saturation, add_to_contrast, add_to_brightness, add_noise):
+			image = func(image) if if np.random.random() > 0.7 else image
+
 		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
 		if self.combine_classes:
 			label_type.masked_fill_(label_type == 4, 3)
