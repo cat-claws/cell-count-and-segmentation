@@ -1,4 +1,5 @@
 import os
+import cv2
 import torch
 import scipy.io
 
@@ -148,4 +149,80 @@ class ConsepSimpleTransformDataset(ConsepSimpleDataset):
 		edge_map = torch.from_numpy(edge_map).long()
 
 		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hv_map':hv_map, 'edge_map':edge_map})
+
 	
+def gaussian_blur(image):
+	"""Apply Gaussian blur to input images."""
+	ksize = np.random.randint(0, 3, size=(2,))
+	ksize = tuple((ksize * 2 + 1).tolist())
+	return cv2.GaussianBlur(image, ksize, sigmaX=0, sigmaY=0, borderType=cv2.BORDER_REPLICATE)
+
+def median_blur(image):
+	"""Apply median blur to input images."""
+	ksize = np.random.randint(0, 3)
+	ksize = ksize * 2 + 1
+	return cv2.medianBlur(image, ksize)
+
+def add_to_hue(image):
+	"""Perturbe the hue of input images."""
+	hue = np.random.uniform(180)
+	hsv = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+	if hsv.dtype.itemsize == 1:
+		# OpenCV uses 0-179 for 8-bit images
+		hsv[..., 0] = (hsv[..., 0] + hue) % 180
+	else:
+		# OpenCV uses 0-360 for floating point images
+		hsv[..., 0] = (hsv[..., 0] + 2 * hue) % 360
+	return cv2.cvtColor(hsv, cv2.COLOR_HSV2RGB)
+
+def add_to_saturation(image):
+	"""Perturbe the saturation of input images."""
+	value = 1 + np.random.uniform(4)
+	gray = cv2.cvtColor(image, cv2.COLOR_RGB2GRAY)
+	ret = image * value + (gray * (1 - value))[:, :, np.newaxis]
+	return np.clip(ret, 0, 255)
+
+def add_to_contrast(image):
+	"""Perturbe the contrast of input images."""
+	value = np.random.uniform()
+	mean = np.mean(image, axis=(0, 1), keepdims=True)
+	ret = image * value + mean * (1 - value)
+	return np.clip(ret, 0, 255)
+
+def add_to_brightness(image):
+	"""Perturbe the brightness of input images."""
+	value = np.random.uniform(0., 0.6)
+	return np.clip(image + value, 0, 255)
+
+class ConsepAugmentedTransformDataset(ConsepSimpleTransformDataset):
+	def __init__(self, train = False, test = False, valid = False, sideLength = 256, num = 200, combine_classes = True):
+		super().__init__(train, test, valid, sideLength, num, combine_classes)
+
+	def __getitem__(self, index):
+		# Load data and get label
+		index = index % len(os.listdir(os.path.join(self.directory, 'Images')))
+		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
+		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
+		
+		image, label_inst, label_type, hori_map, vert_map, edge_map = simpleTransform(image, labels['inst_map'], labels['type_map'], labels['hori_map'], labels['vert_map'], labels['edge_map'], sideLength = self.sideLength, valid = self.valid)
+
+		label_inst = torch.from_numpy(label_inst).long()
+		label_type = torch.from_numpy(label_type).long()
+		image = gaussian_blur(image)
+		image = median_blur(image)
+		image = add_to_hue(image)
+		image = add_to_saturation(image)
+		image = add_to_contrast(image)
+		image = add_to_brightness(image)
+		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
+		if self.combine_classes:
+			label_type.masked_fill_(label_type == 4, 3)
+			label_type.masked_fill_(label_type > 4, 4)
+		
+		hori_map = torch.from_numpy(hori_map).unsqueeze(0).float()
+		vert_map = torch.from_numpy(vert_map).unsqueeze(0).float()
+		hv_map = torch.cat((hori_map, vert_map), dim = 0)
+		
+		edge_map = torch.from_numpy(edge_map).long()
+
+		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hv_map':hv_map, 'edge_map':edge_map})
