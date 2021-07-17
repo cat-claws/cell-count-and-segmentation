@@ -3,6 +3,8 @@ import torch
 import scipy.ndimage
 import numpy as np
 
+from util_hv_map import get_bounding_box
+
 def labelRatios(iterator, index, n_classes = 8):
 	device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 	ratio = torch.ones(n_classes).to(device) # normally, it should start from zero, though we start with one to avoid 'divide by zero'
