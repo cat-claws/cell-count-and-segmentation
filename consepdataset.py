@@ -37,8 +37,6 @@ def extendLabels(force = False):
 			if editted == True or force:
 				scipy.io.savemat(os.path.join(directories[i], 'Labels', setnames[i] + f'_{index + 1}.mat'), labels)
 
-extendLabels()
-
 class ConsepSimpleDataset(torch.utils.data.Dataset):
 	def __init__(self, train = False, test = False, combine_classes = True):
 		self.directory = 'CoNSeP/Train' if train else 'CoNSeP/Test'
