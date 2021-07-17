@@ -9,7 +9,8 @@ import torch.nn as nn
 from PIL import Image
 
 from util_hv_map import gen_targets
-from utils import getEdges
+from utils import getHVMap, getEdgeMap
+
 
 def extendLabels(force = False):
 	""" get horizontal/vertical maps before loading"""
@@ -220,3 +221,96 @@ class ConsepSimpleCropAugmentedDataset(ConsepSimpleCropDataset):
 		edge_map = torch.from_numpy(edge_map).long()
 
 		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hv_map':hv_map, 'edge_map':edge_map})
+	
+	
+import scipy.ndimage
+def rotate(*target):
+	angle = np.random.randint(0, 360)
+	target = [scipy.ndimage.rotate(t, angle, order = 0, mode = 'constant', reshape=False).astype('int32') for t in target]
+	return tuple([t.copy() for t in target])
+
+def distort(*target):
+	target = [np.pad(t, pad_width = ((0, 0), (20, 20))) if len(t.shape) == 2 else np.pad(t, pad_width = ((0, 0), (20, 20), (0, 0))) for t in target]
+
+	target_dist = [t.copy() for t in target]
+	func = np.sin if np.random.random() > 0.7 else np.cos
+	x_scale = np.random.random() / 10 # x_scale should be in [0.0, 0.1]
+	y_scale = np.random.randint(0, 10) # y_scale should be less than image size
+
+	shift = lambda x: int(y_scale * func(np.pi * x * x_scale))
+
+	for k in range(len(target)):
+		for i in range(target[k].shape[0]):
+			target_dist[k][i, :] = np.roll(target[k][i, :], shift(i), axis = 0)
+
+	return tuple([t[:,20:-20].copy() for t in target_dist])
+
+def interchange(*target):
+	return tuple([t.swapaxes(0, 1).copy() for t in target])
+
+def scale(*target, minSideLength):
+	x_scale = np.random.random() * 2 + minSideLength / target[0].shape[0]
+	y_scale = np.random.random() * 2 + minSideLength / target[0].shape[1]
+	target = [scipy.ndimage.zoom(t, (x_scale, y_scale), order = 0) if len(t.shape) == 2 else scipy.ndimage.zoom(t, (x_scale, y_scale, 1)) for t in target]
+	return tuple(target)
+
+def overturn(*target):
+	axis = np.random.randint(0, 2)
+	return tuple([np.flip(t.copy(), axis=axis) for t in target])
+
+def crop(*target, sideLength):
+	H, W = np.array(target[0].shape[:2])
+	x = np.random.randint(H - sideLength)
+	y = np.random.randint(W - sideLength)
+	assert H * W * (H + W) > 0
+
+	target = [t[x:x+sideLength, y:y+sideLength] for t in target]
+
+	return tuple([t.copy() for t in target])
+
+def split(*target, valid = False):
+	H, W = np.array(target[0].shape[:2])
+	target = [t[int(H * 0.7):] if valid else t[:int(H * 0.7)] for t in target]
+	return tuple([t.copy() for t in target])
+
+
+class ConsepTransformedCropAugmentedDataset(ConsepSimpleCropDataset):
+	def __init__(self, train = False, test = False, valid = False, sideLength = 256, num = 200, combine_classes = True):
+		super().__init__(train, test, valid, sideLength, num, combine_classes)
+		self.funcs = [rotate, distort, interchange, lambda *x: scale(*x, minSideLength=sideLength), overturn, lambda *x: tuple([t.copy() for t in x])]
+		self.store()
+
+	def store(self):
+		self.storage = []
+		for index in range(len(os.listdir(os.path.join(self.directory, 'Images')))):
+			image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
+			labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
+			image_, label_inst_, label_type_ = split(image, labels['inst_map'], labels['type_map'], valid = self.valid)
+			for i in range(self.num):
+				image, label_inst, label_type = image_, label_inst_, label_type_
+				funcs = np.random.choice(self.funcs, 3, p=[0.3, 0.1, 0.15, 0.2, 0.15, 0.1])
+				for func in funcs:
+					image, label_inst, label_type = func(image, label_inst, label_type)
+
+				image, label_inst, label_type = crop(image, label_inst, label_type, sideLength = self.sideLength)
+
+				data = {'image':image, 'inst_map':label_inst, 'type_map':label_type}
+				data['edge_map'] = getEdgeMap(torch.tensor(label_inst)).numpy()
+				data['hv_map'] = getHVMap(label_inst)
+				self.storage.append(data)
+
+	def __getitem__(self, index):
+		data = self.storage[index]
+
+		image = torch.from_numpy(np.transpose(data['image'] / 255.0, (2, 0, 1))).float()
+		label_inst = torch.from_numpy(data['inst_map']).long()
+		label_type = torch.from_numpy(data['type_map']).long()
+		edge_map = torch.from_numpy(data['edge_map']).long()
+		hv_map = torch.from_numpy(data['hv_map']).float()
+
+		if self.combine_classes:
+			label_type.masked_fill_(label_type == 4, 3)
+			label_type.masked_fill_(label_type > 4, 4)
+
+		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hv_map':hv_map, 'edge_map':edge_map})
+
