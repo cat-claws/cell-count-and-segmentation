@@ -21,11 +21,10 @@ def getEdges(inst_map): # unluckily, we must have this compatible with torch
 
 
 def getDistanceMap(inst_map):
-	binaries = torch.nn.functional.one_hot(torch.tensor(inst_map).long()).permute(2, 0, 1).numpy()
+	binaries = (np.unique(my_inst_map)[1:] == my_inst_map[...,None]).transpose(2, 0, 1)
 	layers = []
 	for i in range(len(binaries)):
-		if np.max(binaries[i]) == 1:
-			layers.append(ndi.distance_transform_edt(binaries[i]))
+		layers.append(ndi.distance_transform_edt(binaries[i]))
 	return np.max(np.array(layers[1:]), 0)
 
 def scale_range(array, min = -1., max = 1.):
