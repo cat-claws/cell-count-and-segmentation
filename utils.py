@@ -28,6 +28,21 @@ def getDistanceMap(inst_map):
 			layers.append(ndi.distance_transform_edt(binaries[i]))
 	return np.max(np.array(layers[1:]), 0)
 
+def scale_range(array, min = -1., max = 1.):
+	array += -(np.min(array))
+	array /= np.max(array) / (max - min)
+	array += min
+	return array
+
+def getHVMap(inst_map):
+	mesh = np.mgrid[0:inst_map.shape[0], 0:inst_map.shape[1]].astype(float)
+	for k in np.unique(inst_map)[1:]:
+		selected = inst_map == k
+		mesh[0][selected] = scale_range(mesh[0][selected])
+		mesh[1][selected] = scale_range(mesh[1][selected])
+	return np.flip(mesh * (inst_map > 0), 0)
+
+
 import re
 from matplotlib import pyplot as plt
 
