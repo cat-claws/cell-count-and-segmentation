@@ -29,7 +29,7 @@ def getDistanceMap(inst_map):
 
 def scale_range(array, min = -1., max = 1.):
 	array += -(np.min(array))
-	array /= np.max(array) / (max - min)
+	array /= np.max(array) / (max - min) + 1e-10
 	array += min
 	return array
 
