@@ -23,8 +23,9 @@ def extendLabels(force = False):
 			image = np.array(Image.open(os.path.join(directories[i], 'Images', setnames[i] + f'_{index + 1}.png')))[:,:,:3]
 			editted = False
 			
-			if 'edge_map' not in labels:
-				labels['edge_map'] = getEdges(torch.tensor(labels['inst_map'])).numpy()
+			if 'edge_map' not in labels or 'dist_map' not in labels:
+				labels['edge_map'] = getEdgeMap(torch.tensor(labels['inst_map'])).numpy()
+				labels['dist_map'] = getDistanceMap(labels['inst_map'])
 				editted = True
 
 			if ('hori_map' not in labels or 'vert_map' not in labels):
@@ -65,8 +66,9 @@ class ConsepSimpleDataset(torch.utils.data.Dataset):
 		hv_map = torch.cat((hori_map, vert_map), dim = 0)
 		
 		edge_map = torch.from_numpy(labels['edge_map']).long()
+		dist_map = torch.from_numpy(labels['dist_map']).float()
 
-		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hv_map':hv_map, 'edge_map':edge_map})
+		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hv_map':hv_map, 'edge_map':edge_map, 'dist_map':dist_map})
 
 	def transfer(self, data):
 		device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -94,10 +96,11 @@ class ConsepSimplePadDataset(ConsepSimpleDataset):
 		hv_map = torch.cat((hori_map, vert_map), dim = 0)
 		
 		edge_map = torch.from_numpy(labels['edge_map']).long()
+		dist_map = torch.from_numpy(labels['dist_map']).float()
 
 		m = nn.ZeroPad2d(12)
 
-		return self.transfer({'image':m(image), 'inst_map':m(label_inst), 'type_map':m(label_type), 'hv_map':m(hv_map), 'edge_map':m(edge_map)})
+		return self.transfer({'image':m(image), 'inst_map':m(label_inst), 'type_map':m(label_type), 'hv_map':m(hv_map), 'edge_map':m(edge_map), 'dist_map':m(dist_map)})
 
 	
 def simpleCrop(*target, sideLength, valid = False):
@@ -127,7 +130,7 @@ class ConsepSimpleCropDataset(ConsepSimpleDataset):
 		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
 		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
 		
-		image, label_inst, label_type, hori_map, vert_map, edge_map = simpleCrop(image, labels['inst_map'], labels['type_map'], labels['hori_map'], labels['vert_map'], labels['edge_map'], sideLength = self.sideLength, valid = self.valid)
+		image, label_inst, label_type, hori_map, vert_map, edge_map, dist_map = simpleCrop(image, labels['inst_map'], labels['type_map'], labels['hori_map'], labels['vert_map'], labels['edge_map'], labels['dist_map'], sideLength = self.sideLength, valid = self.valid)
 
 		label_inst = torch.from_numpy(label_inst).long()
 		label_type = torch.from_numpy(label_type).long()
@@ -141,8 +144,9 @@ class ConsepSimpleCropDataset(ConsepSimpleDataset):
 		hv_map = torch.cat((hori_map, vert_map), dim = 0)
 		
 		edge_map = torch.from_numpy(edge_map).long()
+		dist_map = torch.from_numpy(dist_map).float()
 
-		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hv_map':hv_map, 'edge_map':edge_map})
+		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hv_map':hv_map, 'edge_map':edge_map, 'dist_map':dist_map})
 
 	
 def gaussian_blur(image):
@@ -201,7 +205,7 @@ class ConsepSimpleCropAugmentedDataset(ConsepSimpleCropDataset):
 		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
 		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
 		
-		image, label_inst, label_type, hori_map, vert_map, edge_map = simpleCrop(image, labels['inst_map'], labels['type_map'], labels['hori_map'], labels['vert_map'], labels['edge_map'], sideLength = self.sideLength, valid = self.valid)
+		image, label_inst, label_type, hori_map, vert_map, edge_map, dist_map = simpleCrop(image, labels['inst_map'], labels['type_map'], labels['hori_map'], labels['vert_map'], labels['edge_map'], labels['dist_map'], sideLength = self.sideLength, valid = self.valid)
 
 		label_inst = torch.from_numpy(label_inst).long()
 		label_type = torch.from_numpy(label_type).long()
@@ -219,8 +223,9 @@ class ConsepSimpleCropAugmentedDataset(ConsepSimpleCropDataset):
 		hv_map = torch.cat((hori_map, vert_map), dim = 0)
 		
 		edge_map = torch.from_numpy(edge_map).long()
+		dist_map = torch.from_numpy(dist_map).float()
 
-		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hv_map':hv_map, 'edge_map':edge_map})
+		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hv_map':hv_map, 'edge_map':edge_map, 'dist_map':dist_map})
 	
 	
 import scipy.ndimage
@@ -296,6 +301,7 @@ class ConsepTransformedCropAugmentedDataset(ConsepSimpleCropDataset):
 
 				data = {'image':image, 'inst_map':label_inst, 'type_map':label_type}
 				data['edge_map'] = getEdgeMap(torch.tensor(label_inst)).numpy()
+				data['dist_map'] = getDistanceMap(label_inst)
 				data['hv_map'] = getHVMap(label_inst)
 				self.storage.append(data)
 
@@ -306,11 +312,13 @@ class ConsepTransformedCropAugmentedDataset(ConsepSimpleCropDataset):
 		label_inst = torch.from_numpy(data['inst_map']).long()
 		label_type = torch.from_numpy(data['type_map']).long()
 		edge_map = torch.from_numpy(data['edge_map']).long()
+		dist_map = torch.from_numpy(data['dist_map']).float()
 		hv_map = torch.from_numpy(data['hv_map']).float()
+		
 
 		if self.combine_classes:
 			label_type.masked_fill_(label_type == 4, 3)
 			label_type.masked_fill_(label_type > 4, 4)
 
-		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hv_map':hv_map, 'edge_map':edge_map})
+		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type, 'hv_map':hv_map, 'edge_map':edge_map, 'dist_map':dist_map})
 
