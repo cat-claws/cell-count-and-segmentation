@@ -1,6 +1,7 @@
 import os
 import cv2
 import torch
+import pickle
 import scipy.io
 
 import numpy as np
@@ -286,7 +287,7 @@ class ConsepTransformedCropAugmentedDataset(ConsepSimpleCropDataset):
 	def __len__(self):
 		return len(self.storage)
 
-	def store(self):		
+	def store(self, directory):		
 		for index in range(len(os.listdir(os.path.join(self.directory, 'Images')))):
 			image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
 			labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
@@ -307,6 +308,13 @@ class ConsepTransformedCropAugmentedDataset(ConsepSimpleCropDataset):
 				data['hv_map'] = getHVMap(label_inst)
 				
 				self.storage.append(data)
+				
+		with open(directory, 'wb') as f:
+    			pickle.dump(self.storage, f)
+			
+	def restore(self, directory):
+		with open(directory, 'rb') as f:
+			self.storage = pickle.load(f)
 
 	def __getitem__(self, index):
 		data = self.storage[index]
