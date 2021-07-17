@@ -99,7 +99,7 @@ class ConsepSimplePadDataset(ConsepSimpleDataset):
 		return self.transfer({'image':m(image), 'inst_map':m(label_inst), 'type_map':m(label_type), 'hv_map':m(hv_map), 'edge_map':m(edge_map)})
 
 	
-def simpleTransform(*target, sideLength, valid = False):
+def simpleCrop(*target, sideLength, valid = False):
 	H, W = np.array(target[0].shape[:2])
 	x = np.random.randint(H * 0.7, H - sideLength) if valid else np.random.randint(H * 0.7 - sideLength)
 	y = np.random.randint(W - sideLength)
@@ -107,16 +107,9 @@ def simpleTransform(*target, sideLength, valid = False):
 
 	target = [t[x:x+sideLength, y:y+sideLength] for t in target]
 
-# 	if np.random.random() > 0.5:
-# 		target = [np.flip(t, 0) for t in target]
-# 	if np.random.random() > 0.5:
-# 		target = [np.flip(t, 1) for t in target]
-# 	if np.random.random() > 0.5:
-# 		target = [t.swapaxes(0, 1) for t in target]
-
 	return tuple([t.copy() for t in target])
 
-class ConsepSimpleTransformDataset(ConsepSimpleDataset):
+class ConsepSimpleCropDataset(ConsepSimpleDataset):
 	def __init__(self, train = False, test = False, valid = False, sideLength = 256, num = 200, combine_classes = True):
 		super().__init__(train, test, combine_classes)
 		assert train + valid + test < 2
@@ -133,7 +126,7 @@ class ConsepSimpleTransformDataset(ConsepSimpleDataset):
 		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
 		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
 		
-		image, label_inst, label_type, hori_map, vert_map, edge_map = simpleTransform(image, labels['inst_map'], labels['type_map'], labels['hori_map'], labels['vert_map'], labels['edge_map'], sideLength = self.sideLength, valid = self.valid)
+		image, label_inst, label_type, hori_map, vert_map, edge_map = simpleCrop(image, labels['inst_map'], labels['type_map'], labels['hori_map'], labels['vert_map'], labels['edge_map'], sideLength = self.sideLength, valid = self.valid)
 
 		label_inst = torch.from_numpy(label_inst).long()
 		label_type = torch.from_numpy(label_type).long()
@@ -197,7 +190,7 @@ def add_to_brightness(image):
 def add_noise(image):
 	return np.clip(image + np.random.normal(0, 100, image.shape), 0, 255)
 
-class ConsepAugmentedTransformDataset(ConsepSimpleTransformDataset):
+class ConsepSimpleCropAugmentedDataset(ConsepSimpleCropDataset):
 	def __init__(self, train = False, test = False, valid = False, sideLength = 256, num = 200, combine_classes = True):
 		super().__init__(train, test, valid, sideLength, num, combine_classes)
 
@@ -207,7 +200,7 @@ class ConsepAugmentedTransformDataset(ConsepSimpleTransformDataset):
 		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
 		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
 		
-		image, label_inst, label_type, hori_map, vert_map, edge_map = simpleTransform(image, labels['inst_map'], labels['type_map'], labels['hori_map'], labels['vert_map'], labels['edge_map'], sideLength = self.sideLength, valid = self.valid)
+		image, label_inst, label_type, hori_map, vert_map, edge_map = simpleCrop(image, labels['inst_map'], labels['type_map'], labels['hori_map'], labels['vert_map'], labels['edge_map'], sideLength = self.sideLength, valid = self.valid)
 
 		label_inst = torch.from_numpy(label_inst).long()
 		label_type = torch.from_numpy(label_type).long()
