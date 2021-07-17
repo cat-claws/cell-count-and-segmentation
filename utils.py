@@ -21,7 +21,7 @@ def getEdges(inst_map): # unluckily, we must have this compatible with torch
 
 
 def getDistanceMap(inst_map):
-	binaries = (np.unique(my_inst_map)[1:] == my_inst_map[...,None]).transpose(2, 0, 1)
+	binaries = (np.unique(inst_map)[1:] == inst_map[...,None]).transpose(2, 0, 1)
 	layers = []
 	for i in range(len(binaries)):
 		layers.append(ndi.distance_transform_edt(binaries[i]))
