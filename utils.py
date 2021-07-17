@@ -11,7 +11,7 @@ def labelRatios(iterator, index, n_classes = 8):
 			ratio[i] += torch.sum(batch[index] == i) # this is a super slow method, though it does not hurt so far
 	return ratio
 
-def getEdges(inst_map): # unluckily, we must have this compatible with torch
+def getEdgeMap(inst_map): # unluckily, we must have this compatible with torch
 	borderExcluded = torch.nn.ZeroPad2d(1)(torch.ones((inst_map.shape[-2] - 2, inst_map.shape[-1] - 2))).bool().to(inst_map.device)
 	c = torch.zeros_like(inst_map).to(inst_map.device)
 	for i in (-1, 1):
@@ -39,7 +39,7 @@ def getHVMap(inst_map):
 		selected = inst_map == k
 		mesh[0][selected] = scale_range(mesh[0][selected])
 		mesh[1][selected] = scale_range(mesh[1][selected])
-	return np.flip(mesh * (inst_map > 0), 0)
+	return np.flip(mesh * (inst_map > 0), 0).copy()
 
 
 import re
