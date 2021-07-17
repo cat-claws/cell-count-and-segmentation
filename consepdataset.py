@@ -9,7 +9,7 @@ import torch.nn as nn
 from PIL import Image
 
 from util_hv_map import gen_targets
-from utils import getHVMap, getEdgeMap
+from utils import getHVMap, getEdgeMap, getDistanceMap
 
 
 def extendLabels(force = False):
