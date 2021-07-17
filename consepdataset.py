@@ -284,6 +284,9 @@ class ConsepTransformedCropAugmentedDataset(ConsepSimpleCropDataset):
 		super().__init__(train, test, valid, sideLength, num, combine_classes)
 		self.funcs = [rotate, distort, interchange, lambda *x: scale(*x, minSideLength=sideLength), overturn, lambda *x: tuple([t.copy() for t in x])]
 		self.store()
+		
+	def __len__(self):
+		return self.num * len(os.listdir(os.path.join(self.directory, 'Images')))
 
 	def store(self):
 		self.storage = []
