@@ -284,7 +284,7 @@ class ConsepTransformedCropAugmentedDataset(ConsepSimpleCropDataset):
 		self.store()
 		
 	def __len__(self):
-		return self.num * len(os.listdir(os.path.join(self.directory, 'Images')))
+		return len(self.storage)
 
 	def store(self):
 		self.storage = []
