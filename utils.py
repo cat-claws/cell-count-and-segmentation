@@ -22,10 +22,10 @@ def getEdgeMap(inst_map): # unluckily, we must have this compatible with torch
 
 def getDistanceMap(inst_map):
 	binaries = (np.unique(inst_map)[1:] == inst_map[...,None]).transpose(2, 0, 1)
-	layers = []
+	layers = np.zeros_like(inst_map)
 	for i in range(len(binaries)):
-		layers.append(ndi.distance_transform_edt(binaries[i]))
-	return np.max(np.array(layers[1:]), 0)
+		layers = np.maximum(layers, ndi.distance_transform_edt(binaries[i]))
+	return layers
 
 def scale_range(array, min = -1., max = 1.):
 	array += -(np.min(array))
