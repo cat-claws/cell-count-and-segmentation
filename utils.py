@@ -34,7 +34,7 @@ def getDistanceMap(inst_map):
 		dist = binaries[i][L:R, U:D]
 		if dist.shape[0] < 2 or dist.shape[1] < 2:
 			continue
-		layers[L:R, U:D] = scipy.ndimage.distance_transform_edt(dist)
+		layers[L:R, U:D] = np.maximum(layers[L:R, U:D], scipy.ndimage.distance_transform_edt(dist))
 	return layers
 
 def scale_range(array, min = -1., max = 1.):
