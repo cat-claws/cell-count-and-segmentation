@@ -252,8 +252,8 @@ def interchange(*target):
 	return tuple([t.swapaxes(0, 1).copy() for t in target])
 
 def scale(*target, minSideLength):
-	x_scale = np.random.random() * 2 + minSideLength / target[0].shape[0]
-	y_scale = np.random.random() * 2 + minSideLength / target[0].shape[1]
+	x_scale = np.random.random() * 2 + minSideLength / target[0].shape[0] + 0.1
+	y_scale = np.random.random() * 2 + minSideLength / target[0].shape[1] + 0.1
 	target = [scipy.ndimage.zoom(t, (x_scale, y_scale), order = 0) if len(t.shape) == 2 else scipy.ndimage.zoom(t, (x_scale, y_scale, 1)) for t in target]
 	return tuple(target)
 
@@ -278,23 +278,21 @@ def split(*target, valid = False):
 
 
 class ConsepTransformedCropAugmentedDataset(ConsepSimpleCropDataset):
-	def __init__(self, train = False, test = False, valid = False, sideLength = 256, num = 5, combine_classes = True, restore = None):
+	def __init__(self, train = False, test = False, valid = False, sideLength = 256, num = 5, combine_classes = True):
 		super().__init__(train, test, valid, sideLength, num, combine_classes)
 		self.funcs = [rotate, distort, interchange, lambda *x: scale(*x, minSideLength=sideLength), overturn, lambda *x: tuple([t.copy() for t in x])]
-		if restore != None:
-			self.storage = restore
-		else:
-			self.store()
+		self.storage = []
 		
 	def __len__(self):
 		return len(self.storage)
 
-	def store(self):
-		self.storage = []
+	def store(self):		
 		for index in range(len(os.listdir(os.path.join(self.directory, 'Images')))):
 			image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
 			labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
+			
 			image_, label_inst_, label_type_ = split(image, labels['inst_map'], labels['type_map'], valid = self.valid)
+			
 			for i in range(self.num):
 				image, label_inst, label_type = image_, label_inst_, label_type_
 				funcs = np.random.choice(self.funcs, 3, p=[0.3, 0.1, 0.15, 0.2, 0.15, 0.1])
@@ -307,6 +305,7 @@ class ConsepTransformedCropAugmentedDataset(ConsepSimpleCropDataset):
 				data['edge_map'] = getEdgeMap(torch.tensor(label_inst)).numpy()
 				data['dist_map'] = getDistanceMap(label_inst)
 				data['hv_map'] = getHVMap(label_inst)
+				
 				self.storage.append(data)
 
 	def __getitem__(self, index):
