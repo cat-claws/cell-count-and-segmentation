@@ -278,10 +278,13 @@ def split(*target, valid = False):
 
 
 class ConsepTransformedCropAugmentedDataset(ConsepSimpleCropDataset):
-	def __init__(self, train = False, test = False, valid = False, sideLength = 256, num = 5, combine_classes = True):
+	def __init__(self, train = False, test = False, valid = False, sideLength = 256, num = 5, combine_classes = True, restore = None):
 		super().__init__(train, test, valid, sideLength, num, combine_classes)
 		self.funcs = [rotate, distort, interchange, lambda *x: scale(*x, minSideLength=sideLength), overturn, lambda *x: tuple([t.copy() for t in x])]
-		self.store()
+		if restore != None:
+			self.storage = restore
+		else:
+			self.store()
 		
 	def __len__(self):
 		return len(self.storage)
