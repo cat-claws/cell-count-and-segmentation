@@ -318,8 +318,12 @@ class ConsepTransformedCropAugmentedDataset(ConsepSimpleCropDataset):
 
 	def __getitem__(self, index):
 		data = self.storage[index]
+		
+		image = data['image']
+		for func in (gaussian_blur, median_blur, add_to_hue, add_to_saturation, add_to_contrast, add_to_brightness, add_noise):
+			image = func(image) if np.random.random() > 0.7 else image
 
-		image = torch.from_numpy(np.transpose(data['image'] / 255.0, (2, 0, 1))).float()
+		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
 		label_inst = torch.from_numpy(data['inst_map']).long()
 		label_type = torch.from_numpy(data['type_map']).long()
 		edge_map = torch.from_numpy(data['edge_map']).long()
