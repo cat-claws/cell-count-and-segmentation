@@ -6,18 +6,6 @@ import requests
 
 idRegex = re.compile(r'.*file/d/|/view.*|.*id=')
 
-ids = {}
-with open('index.csv', 'r') as f:
-	reader = csv.reader(f)	
-	for row in reader:
-		ids[row[0]] = idRegex.sub('', row[1])
-
-def pull(*names):
-	for name in names:
-		if not os.path.exists(name):
-			download_file_from_google_drive(ids[name], name)
-	return None
-
 # All codes below are taken from this StackOverflow answer: https://stackoverflow.com/a/39225039
 def download_file_from_google_drive(id, destination):
     URL = "https://docs.google.com/uc?export=download"
@@ -49,7 +37,9 @@ def save_response_content(response, destination):
                 f.write(chunk)
 
 if __name__ == '__main__':
-	download_file_from_google_drive('https://drive.google.com/file/d/1CfeaVpKcG2EcRtLA4JZF2kiF3TgmPDZf/view?usp=sharing', 'CoNSeP.zip')
-	download_file_from_google_drive('https://drive.google.com/file/d/1yKWqNYAB_Ba1uij6KxaK5dDB0z2b5566/view?usp=sharing', 'train.pkl')
-	download_file_from_google_drive('https://drive.google.com/file/d/1-15x3lpn8BjDgvVIH5QqPHJzGFQvdJij/view?usp=sharing', 'valid.pkl')
+	data = {'conzip.zip':'https://drive.google.com/file/d/1CfeaVpKcG2EcRtLA4JZF2kiF3TgmPDZf/view?usp=sharing',
+		'train.pkl':'https://drive.google.com/file/d/1yKWqNYAB_Ba1uij6KxaK5dDB0z2b5566/view?usp=sharing',
+		'valid.pkl':'https://drive.google.com/file/d/1-15x3lpn8BjDgvVIH5QqPHJzGFQvdJij/view?usp=sharing'}
 	
+	for k in data:
+		download_file_from_google_drive(idRegex.sub('', data[k]), k)
