@@ -47,3 +47,9 @@ def save_response_content(response, destination):
         for chunk in response.iter_content(CHUNK_SIZE):
             if chunk: # filter out keep-alive new chunks
                 f.write(chunk)
+
+if __name__ == '__main__':
+	download_file_from_google_drive('https://drive.google.com/file/d/1CfeaVpKcG2EcRtLA4JZF2kiF3TgmPDZf/view?usp=sharing', 'CoNSeP.zip')
+	download_file_from_google_drive('https://drive.google.com/file/d/1yKWqNYAB_Ba1uij6KxaK5dDB0z2b5566/view?usp=sharing', 'train.pkl')
+	download_file_from_google_drive('https://drive.google.com/file/d/1-15x3lpn8BjDgvVIH5QqPHJzGFQvdJij/view?usp=sharing', 'valid.pkl')
+	
