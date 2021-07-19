@@ -37,7 +37,7 @@ def save_response_content(response, destination):
                 f.write(chunk)
 
 if __name__ == '__main__':
-	data = {'conzip.zip':'https://drive.google.com/file/d/1CfeaVpKcG2EcRtLA4JZF2kiF3TgmPDZf/view?usp=sharing',
+	data = {'consep.zip':'https://drive.google.com/file/d/1CfeaVpKcG2EcRtLA4JZF2kiF3TgmPDZf/view?usp=sharing',
 		'train.pkl':'https://drive.google.com/file/d/1yKWqNYAB_Ba1uij6KxaK5dDB0z2b5566/view?usp=sharing',
 		'valid.pkl':'https://drive.google.com/file/d/1-15x3lpn8BjDgvVIH5QqPHJzGFQvdJij/view?usp=sharing'}
 	
