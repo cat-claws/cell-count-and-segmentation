@@ -21,6 +21,15 @@ def getEdgeMap(inst_map): # unluckily, we must have this compatible with torch
 			c.masked_fill_(~torch.eq(inst_map, torch.roll(inst_map, shifts=(i, j), dims=(-2, -1))), 1)
 	return torch.logical_and(c.bool(), borderExcluded)
 
+def getMatchingMap(inst_map):
+	padded = np.pad(inst_map, 1, mode = 'symmetric')
+	#same as the pixel [above, below, left, right]
+	return np.stack(((padded == np.roll(padded, shift=1, axis=0))[1:-1, 1:-1],
+		     (padded == np.roll(padded, shift=-1, axis=0))[1:-1, 1:-1],
+		     (padded == np.roll(padded, shift=1, axis=1))[1:-1, 1:-1],
+		     (padded == np.roll(padded, shift=-1, axis=1))[1:-1, 1:-1]),
+		    axis = 0)
+
 
 def getDistanceMap(inst_map):
 	binaries = (np.unique(inst_map)[1:] == inst_map[...,None]).transpose(2, 0, 1)
