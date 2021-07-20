@@ -342,7 +342,7 @@ class ConsepTransformedCropAugmentedDataset(ConsepSimpleCropDataset):
 		edge_map = torch.from_numpy(data['edge_map']).long()
 		dist_map = torch.from_numpy(data['dist_map']).float()
 		hv_map = torch.from_numpy(data['hv_map']).float()
-		same_map = torch.from_numpy(data['same_map'].long()
+		same_map = torch.from_numpy(data['same_map']).long()
 		
 
 		if self.combine_classes:
