@@ -137,7 +137,7 @@ class ConsepSimpleCropDataset(ConsepSimpleDataset):
 		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
 		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
 		
-		image, label_inst, label_type, hori_map, vert_map, edge_map, dist_map, same_map = simpleCrop(image, labels['inst_map'], labels['type_map'], labels['hori_map'], labels['vert_map'], labels['edge_map'], labels['dist_map'], label['same_map'].transpose(1, 2, 0), sideLength = self.sideLength, valid = self.valid)
+		image, label_inst, label_type, hori_map, vert_map, edge_map, dist_map, same_map = simpleCrop(image, labels['inst_map'], labels['type_map'], labels['hori_map'], labels['vert_map'], labels['edge_map'], labels['dist_map'], labels['same_map'].transpose(1, 2, 0), sideLength = self.sideLength, valid = self.valid)
 
 		label_inst = torch.from_numpy(label_inst).long()
 		label_type = torch.from_numpy(label_type).long()
