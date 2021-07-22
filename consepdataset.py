@@ -25,7 +25,7 @@ def extendLabels(force = False):
 			editted = False
 			
 			if 'edge_map' not in labels or 'dist_map' not in labels:
-				labels['edge_map'] = getEdgeMap(torch.tensor(labels['inst_map'])).numpy()
+				labels['edge_map'] = getEdgeMap(labels['inst_map'])
 				labels['dist_map'] = getDistanceMap(labels['inst_map'])
 				editted = True
 
@@ -315,7 +315,7 @@ class ConsepTransformedCropAugmentedDataset(ConsepSimpleCropDataset):
 				image, label_inst, label_type = crop(image, label_inst, label_type, sideLength = self.sideLength)
 
 				data = {'image':image, 'inst_map':label_inst, 'type_map':label_type}
-				data['edge_map'] = getEdgeMap(torch.tensor(label_inst)).numpy()
+				data['edge_map'] = getEdgeMap(label_inst)
 				data['dist_map'] = getDistanceMap(label_inst)
 				data['hv_map'] = getHVMap(label_inst)
 				data['same_map'] = getMatchingMap(label_inst)
