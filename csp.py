@@ -21,7 +21,7 @@ def getConstrainedMap(inst_map):
 		transdict[k] += 1
 	transdict[0] = 0
 
-	return replace_with_dict(inst, transdict)
+	return replace_with_dict(inst_map, transdict)
 
 # https://www.py4u.net/discuss/169577
 def replace_with_dict(ar, dic):
