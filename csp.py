@@ -17,8 +17,11 @@ def getConstrainedMap(inst_map):
 
 	transdict = nx.coloring.greedy_color(graph, strategy="random_sequential")
 
+	labels = list(range(5)) # 5 is the maximum neighbour number here
+	np.random.shuffle(labels)
+	
 	for k in transdict:
-		transdict[k] += 1
+		transdict[k] = labels[transdict[k]] + 1
 	transdict[0] = 0
 
 	return replace_with_dict(inst_map, transdict)
