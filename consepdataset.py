@@ -89,9 +89,9 @@ class ConsepSimpleCropDataset(ConsepSimpleDataset):
 		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
 		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
 		
-		image, label_inst, label_type = simpleCrop(image, getConstrainedMap(labels['inst_map']), labels['type_map'], sideLength = self.sideLength, valid = self.valid)
+		image, label_inst, label_type = simpleCrop(image, labels['inst_map'], labels['type_map'], sideLength = self.sideLength, valid = self.valid)
 
-		label_inst = torch.from_numpy(label_inst).long()
+		label_inst = torch.from_numpy(getConstrainedMap(label_inst)).long()
 		label_type = torch.from_numpy(label_type).long()
 		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
 		if self.combine_classes:
@@ -157,9 +157,9 @@ class ConsepSimpleCropAugmentedDataset(ConsepSimpleCropDataset):
 		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
 		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
 		
-		image, label_inst, label_type = simpleCrop(image, getConstrainedMap(labels['inst_map']), labels['type_map'], sideLength = self.sideLength, valid = self.valid)
+		image, label_inst, label_type = simpleCrop(image, labels['inst_map'], labels['type_map'], sideLength = self.sideLength, valid = self.valid)
 
-		label_inst = torch.from_numpy(label_inst).long()
+		label_inst = torch.from_numpy(getConstrainedMap(label_inst)).long()
 		label_type = torch.from_numpy(label_type).long()
 		
 		for func in (gaussian_blur, median_blur, add_to_hue, add_to_saturation, add_to_contrast, add_to_brightness, add_noise):
