@@ -213,7 +213,7 @@ def scale(*target, minSideLength):
 
 def overturn(*target):
 	axis = np.random.randint(0, 2)
-	return tuple([np.flip(t.copy(), axis=axis) for t in target])
+	return tuple([np.flip(t, axis=axis).copy() for t in target])
 
 def crop(*target, sideLength):
 	H, W = np.array(target[0].shape[:2])
