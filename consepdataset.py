@@ -159,6 +159,11 @@ class ConsepSimpleCropAugmentedDataset(ConsepSimpleCropDataset):
 		
 		image, label_inst, label_type = simpleCrop(image, labels['inst_map'], labels['type_map'], sideLength = self.sideLength, valid = self.valid)
 
+		for func in [interchange, overturn]:
+			if np.random.random() > 0.5:
+				image, label_inst, label_type = func(image, label_inst, label_type)
+
+
 		label_inst = torch.from_numpy(getConstrainedMap(label_inst)).long()
 		label_type = torch.from_numpy(label_type).long()
 		
@@ -167,11 +172,6 @@ class ConsepSimpleCropAugmentedDataset(ConsepSimpleCropDataset):
 			
 		image = add_noise(image)
 		
-		for func in [interchange, overturn]:
-			if np.random.random() > 0.5:
-				image, label_inst, label_type = func(image, label_inst, label_type)
-
-
 		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
 		if self.combine_classes:
 			label_type.masked_fill_(label_type == 4, 3)
