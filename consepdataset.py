@@ -145,7 +145,7 @@ def add_to_brightness(image):
 	return np.clip(image + value, 0, 255)
 
 def add_noise(image):
-	return np.clip(image + np.random.normal(0, 100, image.shape), 0, 255)
+	return image + np.random.normal(0, 100, image.shape)
 
 class ConsepSimpleCropAugmentedDataset(ConsepSimpleCropDataset):
 	def __init__(self, train = False, test = False, valid = False, sideLength = 256, num = 200, combine_classes = True):
@@ -162,8 +162,15 @@ class ConsepSimpleCropAugmentedDataset(ConsepSimpleCropDataset):
 		label_inst = torch.from_numpy(getConstrainedMap(label_inst)).long()
 		label_type = torch.from_numpy(label_type).long()
 		
-		for func in (gaussian_blur, median_blur, add_to_hue, add_to_saturation, add_to_contrast, add_to_brightness, add_noise):
+		for func in (gaussian_blur, median_blur, add_to_hue, add_to_saturation, add_to_contrast, add_to_brightness):
 			image = func(image) if np.random.random() > 0.7 else image
+			
+		image = add_noise(image)
+		
+		for func in [interchange, overturn]:
+			if np.random.random() > 0.5:
+				image, label_inst, label_type = func(image, label_inst, label_type)
+
 
 		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
 		if self.combine_classes:
