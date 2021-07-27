@@ -13,17 +13,7 @@ def getConstrainedMap(inst_map):
 	graph = nx.Graph()
 	graph.add_nodes_from(np.unique(inst_map))
 	graph.add_edges_from(getNeighbours(inst_map))
-	graph.remove_node(0)
-
-	transdict = nx.coloring.greedy_color(graph, strategy="random_sequential")
-
-	labels = list(range(5)) # 5 is the maximum neighbour number here
-	np.random.shuffle(labels)
-	
-	for k in transdict:
-		transdict[k] = labels[transdict[k]] + 1
-	transdict[0] = 0
-
+	transdict = nx.coloring.greedy_color(graph, strategy="largest_first")
 	return replace_with_dict(inst_map, transdict)
 
 def getConstrainedMapNeg(inst_map):	
