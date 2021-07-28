@@ -8,7 +8,7 @@ import numpy as np
 import torch.nn as nn
 
 from PIL import Image
-from csp import getConstrainedMap
+from csp import getConstrainedMap, getConstrainedMapNeg
 
 
 
@@ -29,12 +29,16 @@ class ConsepSimpleDataset(torch.utils.data.Dataset):
 
 		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
 		label_inst = torch.from_numpy(getConstrainedMap(labels['inst_map'])).long()
+		label_inst_neg = torch.from_numpy(getConstrainedMapNeg(labels['inst_map'].copy())).long()
 		label_type = torch.from_numpy(labels['type_map']).long()
 		if self.combine_classes:
 			label_type.masked_fill_(label_type == 4, 3)
 			label_type.masked_fill_(label_type > 4, 4)
 
-		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type})
+		return self.transfer({'image':image,
+				      'inst_map':label_inst,
+				      'type_map':label_type,
+				      'label_inst_neg':label_inst_neg})
 
 	def transfer(self, data):
 		device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -52,6 +56,7 @@ class ConsepSimplePadDataset(ConsepSimpleDataset):
 			
 		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
 		label_inst = torch.from_numpy(getConstrainedMap(labels['inst_map'])).long()
+		label_inst_neg = torch.from_numpy(getConstrainedMapNeg(labels['inst_map'].copy())).long()
 		label_type = torch.from_numpy(labels['type_map']).long()
 		if self.combine_classes:
 			label_type.masked_fill_(label_type == 4, 3)
@@ -59,7 +64,10 @@ class ConsepSimplePadDataset(ConsepSimpleDataset):
 		
 		m = nn.ZeroPad2d(12)
 
-		return self.transfer({'image':m(image), 'inst_map':m(label_inst), 'type_map':m(label_type)})
+		return self.transfer({'image':m(image),
+				      'inst_map':m(label_inst),
+				      'type_map':m(label_type),
+				      'label_inst_neg':label_inst_neg})
 
 	
 def simpleCrop(*target, sideLength, valid = False):
@@ -89,16 +97,20 @@ class ConsepSimpleCropDataset(ConsepSimpleDataset):
 		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
 		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
 		
-		image, label_inst, label_type = simpleCrop(image, labels['inst_map'], labels['type_map'], sideLength = self.sideLength, valid = self.valid)
+		image, label_inst_, label_type = simpleCrop(image, labels['inst_map'], labels['type_map'], sideLength = self.sideLength, valid = self.valid)
 
-		label_inst = torch.from_numpy(getConstrainedMap(label_inst)).long()
+		label_inst = torch.from_numpy(getConstrainedMap(label_inst_)).long()
+		label_inst_neg = torch.from_numpy(getConstrainedMapNeg(label_inst_.copy())).long()
 		label_type = torch.from_numpy(label_type).long()
 		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
 		if self.combine_classes:
 			label_type.masked_fill_(label_type == 4, 3)
 			label_type.masked_fill_(label_type > 4, 4)
 			
-		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type})
+		return self.transfer({'image':image,
+				      'inst_map':label_inst,
+				      'type_map':label_type,
+				      'label_inst_neg':label_inst_neg})
 
 	
 def gaussian_blur(image):
@@ -157,14 +169,15 @@ class ConsepSimpleCropAugmentedDataset(ConsepSimpleCropDataset):
 		image = np.array(Image.open(os.path.join(self.directory, 'Images', self.setname + f'_{index + 1}.png')))[:,:,:3]
 		labels = scipy.io.loadmat(os.path.join(self.directory, 'Labels', self.setname + f'_{index + 1}.mat'))
 		
-		image, label_inst, label_type = simpleCrop(image, labels['inst_map'], labels['type_map'], sideLength = self.sideLength, valid = self.valid)
+		image, label_inst_, label_type = simpleCrop(image, labels['inst_map'], labels['type_map'], sideLength = self.sideLength, valid = self.valid)
 
 		for func in [interchange, overturn]:
 			if np.random.random() > 0.5:
-				image, label_inst, label_type = func(image, label_inst, label_type)
+				image, label_inst_, label_type = func(image, label_inst_, label_type)
 
 
-		label_inst = torch.from_numpy(getConstrainedMap(label_inst)).long()
+		label_inst = torch.from_numpy(getConstrainedMap(label_inst_)).long()
+	  	label_inst_neg = torch.from_numpy(getConstrainedMapNeg(label_inst_.copy())).long()
 		label_type = torch.from_numpy(label_type).long()
 		
 		for func in (gaussian_blur, median_blur, add_to_hue, add_to_saturation, add_to_contrast, add_to_brightness):
@@ -177,7 +190,10 @@ class ConsepSimpleCropAugmentedDataset(ConsepSimpleCropDataset):
 			label_type.masked_fill_(label_type == 4, 3)
 			label_type.masked_fill_(label_type > 4, 4)
 			
-		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type})
+		return self.transfer({'image':image,
+				      'inst_map':label_inst,
+				      'type_map':label_type,
+				      'label_inst_neg':label_inst_neg})
 	
 	
 import scipy.ndimage
@@ -275,11 +291,15 @@ class ConsepTransformedCropAugmentedDataset(ConsepSimpleCropDataset):
 
 		image = torch.from_numpy(np.transpose(image / 255.0, (2, 0, 1))).float()
 		label_inst = torch.from_numpy(getConstrainedMap(data['inst_map'])).long()
+		label_inst_neg = torch.from_numpy(getConstrainedMapNeg(data['inst_map'].copy())).long()
 		label_type = torch.from_numpy(data['type_map']).long()		
 
 		if self.combine_classes:
 			label_type.masked_fill_(label_type == 4, 3)
 			label_type.masked_fill_(label_type > 4, 4)
 
-		return self.transfer({'image':image, 'inst_map':label_inst, 'type_map':label_type})
+		return self.transfer({'image':image,
+				      'inst_map':label_inst,
+				      'type_map':label_type,
+				      'label_inst_neg':label_inst_neg})
 
