@@ -14,7 +14,8 @@ def getConstrainedMap(inst_map):
 	graph = nx.Graph()
 	graph.add_nodes_from(np.unique(inst_map))
 	graph.add_edges_from(getNeighbours(inst_map))
-	graph.remove_node(0)
+	if 0 in graph:
+		graph.remove_node(0)
 
 	transdict = nx.coloring.greedy_color(graph, strategy="random_sequential")
 
@@ -31,7 +32,8 @@ def getConstrainedMapNeg(inst_map):
 	graph = nx.Graph()
 	graph.add_nodes_from(np.unique(inst_map))
 	graph.add_edges_from(getNeighbours(inst_map))
-	graph.remove_node(0)
+	if 0 in graph:
+		graph.remove_node(0)
 
 	if graph.number_of_edges() < 1 or graph.number_of_nodes() < 2:
 		return None
