@@ -1,3 +1,4 @@
+import random
 import numpy as np
 import networkx as nx
 
@@ -37,8 +38,8 @@ def getConstrainedMapNeg(inst_map):
 
 	else:
 		if graph.number_of_edges() > 1:
-			graph.remove_edges_from(np.random.choice(list(graph.edges()), np.random.randint(1, graph.number_of_edges())))
-		u, v = np.random.choice(list(graph.edges()))
+			graph.remove_edges_from(random.sample(list(graph.edges()), np.random.randint(1, graph.number_of_edges())))
+		u, v = random.choice(list(graph.edges()))
 		graph = nx.contracted_nodes(graph, u, v)
 
 		transdict = nx.coloring.greedy_color(graph, strategy="random_sequential")
