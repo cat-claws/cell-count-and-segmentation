@@ -37,7 +37,7 @@ def getConstrainedMapNeg(inst_map):
 
 	else:
 		if graph.number_of_edges() > 1:
-			graph.remove_edges_from(np.random.sample(graph.edges(), np.random.randint(1, graph.number_of_edges())))
+			graph.remove_edges_from(np.random.choice(graph.edges(), np.random.randint(1, graph.number_of_edges())))
 		u, v = np.random.choice(list(graph.edges()))
 		graph = nx.contracted_nodes(graph, u, v)
 
