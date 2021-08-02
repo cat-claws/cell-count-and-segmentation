@@ -53,8 +53,13 @@ def getDictCSOP(preds, insts, num = 5):
 	solution = {}
 	for x in (G.subgraph(c) for c in nx.connected_components(G)):
 		subsolutions = findAllSolutionsCSP(x)
-		mincost = np.argmin([sum([costs[(k, v)] for k, v in subsol.items()]) for subsol in subsolutions])
-		solution.update(subsolutions[mincost])
+		mincost = float('inf')
+		for subsol in subsolutions:
+			temp = sum([costs[(k, v)] for k, v in subsol.items()])
+			if temp < mincost:
+				mincost = temp
+				subsolution = subsol
+		solution.update(subsolution)
 	return solution
 
 def replace_with_dict(ar, dic):
