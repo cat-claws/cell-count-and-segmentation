@@ -43,7 +43,7 @@ def findAllSolutionsCSP(graph, num = 5):
 	problem.addVariables(graph.nodes(), range(1, num + 1))
 	for edge in graph.edges():
 		problem.addConstraint(lambda u, v: u != v, edge)
-	return problem.getSolutions()
+	return problem.getSolutionIter()
 
 def getDictCSOP(preds, insts, num = 5):
 	# preds [channel, H, W]
