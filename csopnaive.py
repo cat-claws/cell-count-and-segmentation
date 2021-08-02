@@ -49,7 +49,7 @@ def getDictCSOP(preds, insts, num = 5):
 	# preds [channel, H, W]
 	# insts [H, W]
 	costs = getCostDict(preds, insts, num)
-	G = getGraph(insts)
+	G = getGraph(insts.cpu())
 	solution = {}
 	for x in (G.subgraph(c) for c in nx.connected_components(G)):
 		subsolutions = findAllSolutionsCSP(x)
@@ -78,8 +78,9 @@ def replace_with_dict(ar, dic):
 	return torch.from_numpy(v[sidx[np.searchsorted(k,ar,sorter=sidx)]])
 
 def adjust_labels(preds, labels, colors = 5):
-	for i in range(preds.shape[0]):
-		solution = getDictCSOP(preds[i], labels[i], num = colors)
-		solution[0] = 0
-		labels[i] = replace_with_dict(labels[i], solution).to(preds.device)
+	with torch.no_grad():
+		for i in range(preds.shape[0]):
+			solution = getDictCSOP(preds[i], labels[i], num = colors)
+			solution[0] = 0
+			labels[i] = replace_with_dict(labels[i], solution).to(preds.device)
 	return labels
