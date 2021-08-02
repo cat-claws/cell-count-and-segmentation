@@ -2,7 +2,54 @@ import torch
 import numpy as np
 import networkx as nx
 import torch.nn.functional as F
-from constraint import *
+
+import re
+xvarname = re.compile(r'X\[(\d+),(\d)\]')
+
+import gurobipy as gp
+from gurobipy import GRB
+
+def gpCSOP(costs, graph, num = 5):
+	# Model
+	m = gp.Model("CSOP")
+
+	# Decision vairables
+	X = m.addVars([(node, index) for node in graph for index in range(1, 6)], vtype=GRB.BINARY, name="X") 
+
+	# Objective function
+	obj_func = 0;
+	for node in graph:
+		for index in range(1, num + 1):
+			obj_func += costs[node, index]*X[node, index]
+	m.setObjective(obj_func, GRB.MINIMIZE)
+
+	# Each job starts at exactly one time instant
+	for node in graph:
+		job_start_once = 0;
+		for index in range(1, num + 1):
+			job_start_once += X[node, index]
+		m.addConstr(job_start_once==1)
+
+	# At any time instant, at most one job is being processed
+	for u, v in graph.edges:
+		for index in range(1, num + 1):
+			no_same_color = X[u, index] + X[v, index]
+			m.addConstr(no_same_color <= 1, "0")
+
+	# Solve
+	m.Params.LogToConsole = 0
+	m.optimize()
+
+	solution = {}
+	for x in X.values():
+		if(x.x > 0.5):
+
+			pair = xvarname.search(x.varName).groups()
+			solution[int(pair[0])] = int(pair[1])
+
+	# print('Obj: %g' % m.objVal)
+	return solution
+
 
 def getColoredIndices(insts):
 	# insts [H, W]
@@ -38,13 +85,6 @@ def getGraph(inst_map):
 		graph.remove_node(0)
 	return graph
 
-def findAllSolutionsCSP(graph, num = 5):
-	problem = Problem()
-	problem.addVariables(graph.nodes(), range(1, num + 1))
-	for edge in graph.edges():
-		problem.addConstraint(lambda u, v: u != v, edge)
-	return problem.getSolutionIter()
-
 def getDictCSOP(preds, insts, num = 5):
 	# preds [channel, H, W]
 	# insts [H, W]
@@ -52,18 +92,7 @@ def getDictCSOP(preds, insts, num = 5):
 	G = getGraph(insts.cpu())
 	solution = {}
 	for x in (G.subgraph(c) for c in nx.connected_components(G)):
-		subsolutions = findAllSolutionsCSP(x)
-		mincost = float('inf')
-		count = 1e7 # this is a patch
-		for subsol in subsolutions:
-			temp = sum([costs[(k, v)] for k, v in subsol.items()])
-			if temp < mincost:
-				mincost = temp
-				subsolution = subsol
-			count -= 1
-			if count == 0:
-				break
-		solution.update(subsolution)
+		solution.update(gpCSOP(costs, x, num))
 	return solution
 
 def replace_with_dict(ar, dic):
