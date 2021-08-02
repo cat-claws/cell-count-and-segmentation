@@ -54,11 +54,15 @@ def getDictCSOP(preds, insts, num = 5):
 	for x in (G.subgraph(c) for c in nx.connected_components(G)):
 		subsolutions = findAllSolutionsCSP(x)
 		mincost = float('inf')
+		count = 1e7 # this is a patch
 		for subsol in subsolutions:
 			temp = sum([costs[(k, v)] for k, v in subsol.items()])
 			if temp < mincost:
 				mincost = temp
 				subsolution = subsol
+			count -= 1
+			if count == 0:
+				break
 		solution.update(subsolution)
 	return solution
 
